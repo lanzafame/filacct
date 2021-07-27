@@ -116,7 +116,8 @@ func (m *Miner) fetchMessages() error {
 		return err
 	}
 
-	for _, msg := range delta {
+	for i, msg := range delta {
+		log.Printf("msg %d/%d", i, len(delta))
 		msgCid := msg.Cid
 		err := m.fetchMessage("https://filfox.info/api/v1/message/%s", msgCid)
 		if err != nil {
