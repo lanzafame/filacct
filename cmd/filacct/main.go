@@ -144,9 +144,16 @@ func account(w http.ResponseWriter, r *http.Request) {
 
 var serveCmd = &cli.Command{
 	Name: "serve",
+	Flags: []cli.Flag{
+		&cli.IntFlag{
+			Name:  "port",
+			Value: 9090,
+			Usage: "Port that the server will use",
+		},
+	},
 	Action: func(cctx *cli.Context) error {
 		http.HandleFunc("/", account)
-		err := http.ListenAndServe("0.0.0.0:9090", nil) // setting listening port
+		err := http.ListenAndServe("0.0.0.0:80", nil) // setting listening port
 		if err != nil {
 			log.Fatal("ListenAndServe: ", err)
 		}
