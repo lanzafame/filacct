@@ -34,6 +34,9 @@ func main() {
 var downloadCmd = &cli.Command{
 	Name: "download",
 	Action: func(cctx *cli.Context) error {
+		if cctx.Args().Len() <= 0 {
+			log.Println("please provide at least one miner address, i.e. f0410941")
+		}
 		addresses := cctx.Args().Slice()
 		for _, address := range addresses {
 			err := filacct.FetchAddress(address)
@@ -49,6 +52,9 @@ var processCmd = &cli.Command{
 	Name: "process",
 	Action: func(cctx *cli.Context) error {
 		fmt.Println("processing")
+		if cctx.Args().Len() <= 0 {
+			log.Println("please provide at least one miner address, i.e. f0410941")
+		}
 		addresses := cctx.Args().Slice()
 		for _, a := range addresses {
 			m := &filacct.Miner{Address: a}
@@ -165,6 +171,9 @@ var serveCmd = &cli.Command{
 var initCmd = &cli.Command{
 	Name: "init",
 	Action: func(cctx *cli.Context) error {
+		if cctx.Args().Len() <= 0 {
+			log.Println("please provide at least one miner address, i.e. f0410941")
+		}
 		addresses := cctx.Args().Slice()
 		for _, addr := range addresses {
 			err := os.Mkdir(addr, 0777)
