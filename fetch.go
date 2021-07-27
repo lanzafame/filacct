@@ -355,6 +355,10 @@ func backoff(res *http.Response) {
 func (m *Miner) getLatestJsonFile(dir string) (string, error) {
 	files, err := ioutil.ReadDir(fmt.Sprintf("%s/%s", m.Address, dir))
 	if err != nil {
+		return "", err
+	}
+
+	if len(files) <= 0 {
 		return "", nil
 	}
 
@@ -376,6 +380,10 @@ func (m *Miner) getLatestContents(dir string) ([]byte, error) {
 		return nil, err
 	}
 
+	if latest == "" {
+		return nil, nil
+	}
+
 	content, err := ioutil.ReadFile(fmt.Sprintf("%s/%s/%s.json", m.Address, dir, latest))
 	if err != nil {
 		return nil, err
@@ -388,6 +396,12 @@ func (m *Miner) getLatestStoredMsg() (msgStub, error) {
 	msgStubs, err := m.getLatestContents("msglist")
 	if err != nil {
 		return msgStub{}, err
+	}
+
+	if msgStubs == nil {
+		return msgStub{
+			Height: 0,
+		}, nil
 	}
 
 	// unmarshal json
