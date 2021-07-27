@@ -17,6 +17,7 @@ func main() {
 		downloadCmd,
 		processCmd,
 		serveCmd,
+		initCmd,
 	}
 
 	app := &cli.App{
@@ -33,7 +34,7 @@ func main() {
 var downloadCmd = &cli.Command{
 	Name: "download",
 	Action: func(cctx *cli.Context) error {
-		addresses := []string{"f0410941"}
+		addresses := cctx.Args().Slice()
 		for _, address := range addresses {
 			err := filacct.FetchAddress(address)
 			if err != nil {
@@ -48,7 +49,7 @@ var processCmd = &cli.Command{
 	Name: "process",
 	Action: func(cctx *cli.Context) error {
 		fmt.Println("processing")
-		addresses := []string{"f0410941"}
+		addresses := cctx.Args().Slice()
 		for _, a := range addresses {
 			m := &filacct.Miner{Address: a}
 			messages, err := m.MarshalAllMsgs()
@@ -157,6 +158,33 @@ var serveCmd = &cli.Command{
 		if err != nil {
 			log.Fatal("ListenAndServe: ", err)
 		}
+		return nil
+	},
+}
+
+var initCmd = &cli.Command{
+	Name: "init",
+	Action: func(cctx *cli.Context) error {
+		addresses := cctx.Args().Slice()
+		for _, addr := range addresses {
+			err := os.Mkdir(addr, 0777)
+			if err != nil {
+				return err
+			}
+			err = os.MkdirAll(fmt.Sprintf("%s/messages", addr), 0777)
+			if err != nil {
+				return err
+			}
+			err = os.MkdirAll(fmt.Sprintf("%s/msglist", addr), 0777)
+			if err != nil {
+				return err
+			}
+			err = os.MkdirAll(fmt.Sprintf("%s/transfers", addr), 0777)
+			if err != nil {
+				return err
+			}
+		}
+
 		return nil
 	},
 }
