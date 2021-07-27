@@ -160,7 +160,9 @@ var serveCmd = &cli.Command{
 	},
 	Action: func(cctx *cli.Context) error {
 		http.HandleFunc("/", account)
-		err := http.ListenAndServe("0.0.0.0:80", nil) // setting listening port
+
+		port := cctx.Int("port")
+		err := http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", port), nil) // setting listening port
 		if err != nil {
 			log.Fatal("ListenAndServe: ", err)
 		}
