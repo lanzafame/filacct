@@ -338,15 +338,15 @@ func backoff(res *http.Response) {
 		if i < 5 {
 			sleep, err := strconv.Atoi(res.Header.Get("x-ratelimit-reset"))
 			if err != nil {
-				log.Printf("backing off for %d", defaultBackoff)
+				log.Printf("backing off for %s", defaultBackoff)
 				time.Sleep(defaultBackoff) // overly cautious in the case where we don't get the reset value
 			}
 			sleepDur, err := time.ParseDuration(fmt.Sprintf("%ds", sleep))
 			if err != nil {
-				log.Printf("backing off for %d", defaultBackoff)
+				log.Printf("backing off for %s", defaultBackoff)
 				time.Sleep(defaultBackoff) // overly cautious in the case where we don't get the reset value
 			}
-			log.Printf("backing off for %d", sleepDur)
+			log.Printf("backing off for %s", sleepDur)
 			time.Sleep(sleepDur)
 		}
 	}
