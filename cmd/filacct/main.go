@@ -1,6 +1,7 @@
 package main
 
 import (
+	"embed"
 	"fmt"
 	"html/template"
 	"log"
@@ -11,6 +12,9 @@ import (
 	"github.com/lanzafame/filacct"
 	cli "github.com/urfave/cli/v2"
 )
+
+//go:embed template
+var content embed.FS
 
 func main() {
 	local := []*cli.Command{
@@ -105,7 +109,10 @@ type Result struct {
 
 func account(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
-		t, _ := template.ParseFiles("form.gtpl")
+		t, err := template.ParseFS(content, "template/form.gtpl")
+		if err != nil {
+			log.Print(err)
+		}
 		t.Execute(w, nil)
 	} else {
 		r.ParseForm()
@@ -141,7 +148,7 @@ func account(w http.ResponseWriter, r *http.Request) {
 			BurnFee:     results.BurnFee,
 			FILWon:      results.Reward,
 		}
-		t, err := template.ParseFiles("results.gtpl")
+		t, err := template.ParseFS(content, "template/results.gtpl")
 		if err != nil {
 			log.Print(err)
 		}
