@@ -35,7 +35,7 @@
                 </tr>
                 <tr>
                     <td>Assets</td>
-                    <td>Tax</td>
+                    <td>Cost</td>
                     <td>Revenue</td>
                 </tr>
             </thead>
@@ -49,6 +49,21 @@
                     <td></td>
                     <td>Burn Fee: {{.BurnFee}}</td>
                     <td>FIL won: {{.FILWon}}</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td>WindowPoSt: {{.WindowPoSt}}</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td>PreCommit: {{.PreCommit}}</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td>ProveCommit: {{.ProveCommit}}</td>
+                    <td></td>
                 </tr>
             </tbody>
         </table>

@@ -104,6 +104,9 @@ type Result struct {
 	MinerFee    string
 	BlocksWon   int
 	BurnFee     string
+	WindowPoSt  string
+	PreCommit   string
+	ProveCommit string
 	FILWon      string
 }
 
@@ -146,6 +149,9 @@ func account(w http.ResponseWriter, r *http.Request) {
 			MinerFee:    results.MinerFee,
 			BlocksWon:   results.Count,
 			BurnFee:     results.BurnFee,
+			WindowPoSt:  results.WindowPoSt,
+			PreCommit:   results.PreCommit,
+			ProveCommit: results.ProveCommit,
 			FILWon:      results.Reward,
 		}
 		t, err := template.ParseFS(content, "template/results.gtpl")
