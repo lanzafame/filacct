@@ -286,7 +286,7 @@ func (m *Miner) GetFees(start, end int64) (Fees, error) {
 		Other:        filFloat(fees.Other),
 		MinerFee:     filFloat(fees.MinerFee),
 		MinerPenalty: filFloat(fees.MinerPenalty),
-		BurnFee:      filFloat(fees.WindowPoSt + fees.PreCommit + fees.ProveCommit + fees.ProveCommit + fees.Other + fees.MinerFee),
+		BurnFee:      filFloat(fees.Other),
 	}
 
 	return fee, nil
