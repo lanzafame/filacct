@@ -65,6 +65,11 @@
                     <td>ProveCommit (Burn fee for ProveCommit messages): {{.ProveCommit}}</td>
                     <td></td>
                 </tr>
+                <tr>
+                    <td></td>
+                    <td>Penalty (FIL lost due to fault fees): {{.Penalty}}</td>
+                    <td></td>
+                </tr>
             </tbody>
         </table>
     </body>

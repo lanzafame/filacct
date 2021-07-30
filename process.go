@@ -12,6 +12,8 @@ import (
 	"time"
 )
 
+const dateFmt = "2006-01-02"
+
 type balance struct {
 	Available  string `json:"availableBalance"`
 	Balance    string `json:"balance"`
@@ -75,11 +77,16 @@ type Fees struct {
 	Other        string `json:"other,omitempty"`
 }
 
+type Penalty struct {
+	Value string
+}
+
 type Result struct {
 	Balance `json:"balance,omitempty"`
 	Assets  `json:"assets,omitempty"`
 	Blocks  `json:"blocks,omitempty"`
 	Fees    `json:"fees,omitempty"`
+	Penalty `json:"penalty,omitempty"`
 }
 
 type resultDay struct {
@@ -118,6 +125,11 @@ func QueryMiner(q Query) (Result, error) {
 		return Result{}, err
 	}
 
+	penalties, err := m.GetPenalties(start, end)
+	if err != nil {
+		return Result{}, err
+	}
+
 	blocks, err := m.GetBlocks(start, end)
 	if err != nil {
 		return Result{}, err
@@ -133,6 +145,7 @@ func QueryMiner(q Query) (Result, error) {
 		Assets:  assets,
 		Blocks:  blocks,
 		Fees:    fees,
+		Penalty: penalties,
 	}
 
 	return res, nil
@@ -165,7 +178,44 @@ func (m *Miner) GetBalance() (Balance, error) {
 		return Balance{}, err
 	}
 	// get latest balance element
-	return Balance{Available: filFloat(available), Pledged: filFloat(pledged), Locked: filFloat(locked)}, nil
+	return Balance{Available: FilFloat(available), Pledged: FilFloat(pledged), Locked: FilFloat(locked)}, nil
+}
+
+func (m *Miner) GetPenalties(start, end int64) (Penalty, error) {
+	// transfers to the burn account that have no message id are penalties
+	// get transfer amounts to determine whether any FIL has been sent from the miner
+	filename, err := m.getLatestJsonFile("transfers")
+	if err != nil {
+		return Penalty{}, err
+	}
+	acontent, err := ioutil.ReadFile(fmt.Sprintf("%s/transfers/%s.json", m.Address, filename))
+	if err != nil {
+		return Penalty{}, err
+	}
+
+	transf := []transfer{}
+	err = json.Unmarshal(acontent, &transf)
+	if err != nil {
+		return Penalty{}, err
+	}
+	sort.SliceStable(transf, func(i, j int) bool { return transf[i].Height < transf[j].Height })
+
+	subset := []transfer{}
+	for _, t := range transf {
+		if t.Timestamp >= start && t.Timestamp <= end {
+			subset = append(subset, t)
+		}
+	}
+
+	var amount float64
+	for _, s := range subset {
+		if s.Message == "" {
+			a, _ := strconv.ParseFloat(s.Value, 64)
+			amount += a
+		}
+	}
+
+	return Penalty{Value: fmt.Sprintf("%v", amount)}, nil
 }
 
 func (m *Miner) GetAssets(start, end int64) (Assets, error) {
@@ -197,7 +247,7 @@ func (m *Miner) GetAssets(start, end int64) (Assets, error) {
 		amount += a
 	}
 
-	asset := Assets{Transferred: filFloat(amount)}
+	asset := Assets{Transferred: FilFloat(amount)}
 
 	return asset, nil
 }
@@ -229,7 +279,7 @@ func (m *Miner) GetBlocks(start, end int64) (Blocks, error) {
 
 	blk := Blocks{
 		Count:  len(filtered),
-		Reward: filFloat(reward),
+		Reward: FilFloat(reward),
 	}
 
 	return blk, nil
@@ -280,13 +330,12 @@ func (m *Miner) GetFees(start, end int64) (Fees, error) {
 	}
 
 	fee := Fees{
-		WindowPoSt:   filFloat(fees.WindowPoSt),
-		PreCommit:    filFloat(fees.PreCommit),
-		ProveCommit:  filFloat(fees.ProveCommit),
-		Other:        filFloat(fees.Other),
-		MinerFee:     filFloat(fees.MinerFee),
-		MinerPenalty: filFloat(fees.MinerPenalty),
-		BurnFee:      filFloat(fees.Other),
+		WindowPoSt:   FilFloat(fees.WindowPoSt),
+		PreCommit:    FilFloat(fees.PreCommit),
+		ProveCommit:  FilFloat(fees.ProveCommit),
+		MinerFee:     FilFloat(fees.MinerFee),
+		MinerPenalty: FilFloat(fees.MinerPenalty),
+		BurnFee:      FilFloat(fees.Other),
 	}
 
 	return fee, nil
@@ -368,6 +417,6 @@ func WriteResultsToCSV(resultingDays []resultDay) {
 	file.Close()
 }
 
-func filFloat(v float64) string {
+func FilFloat(v float64) string {
 	return fmt.Sprintf("%.18f", v*0.000000000000000001)
 }
