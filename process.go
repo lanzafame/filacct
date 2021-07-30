@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math"
 	"os"
 	"sort"
 	"strconv"
@@ -215,7 +216,8 @@ func (m *Miner) GetPenalties(start, end int64) (Penalty, error) {
 		}
 	}
 
-	return Penalty{Value: fmt.Sprintf("%v", amount)}, nil
+	faults := math.Abs(amount)
+	return Penalty{Value: FilFloat(faults)}, nil
 }
 
 func (m *Miner) GetAssets(start, end int64) (Assets, error) {
