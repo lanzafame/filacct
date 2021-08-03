@@ -1,8 +1,76 @@
 <html>
     <head>
-    <title>{{.MinerID}} Account Summary</title>
+    <title>{{.Owner.MinerID}} Account Summary</title>
     </head>
     <body>
+        <h1>Owner</h1>
+        <h4>{{.Owner.MinerID}}</h4>
+        <table>
+            <tbody>
+                <tr>
+                    <td>Available:</td>
+                    <td>{{.Owner.Available}}</td>
+                </tr>
+                <tr>
+                    <td>Pledged:</td>
+                    <td>{{.Owner.Pledged}}</td>
+                </tr>
+                <tr>
+                    <td>Locked:</td>
+                    <td>{{.Owner.Locked}}</td>
+                </tr>
+            </tbody>
+        </table>
+        <hr>
+        <table>
+            <thead>
+                <tr>
+                    <td>Start Date: {{.Owner.StartDate}}</td>
+                    <td></td>
+                    <td>End Date: {{.Owner.EndDate}}</td>
+                </tr>
+                <tr>
+                    <td><b>Assets</b></td>
+                    <td><b>Cost</b></td>
+                    <td><b>Revenue</b></td>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Transferred: {{.Owner.Transferred}}</td>
+                    <td>Miner Fee: {{.Owner.MinerFee}}</td>
+                    <td>Blocks won: {{.Owner.BlocksWon}}</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td>Burn Fee: {{.Owner.BurnFee}}</td>
+                    <td>FIL won: {{.Owner.FILWon}}</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td>WindowPoSt: {{.Owner.WindowPoSt}}</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td>PreCommit: {{.Owner.PreCommit}}</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td>ProveCommit: {{.Owner.ProveCommit}}</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td>Penalty: {{.Owner.Penalty}}</td>
+                    <td></td>
+                </tr>
+            </tbody>
+        </table>
+        <hr>
+        <h1>Miners</h1>
+        {{range .Miners}}
         <h4>{{.MinerID}}</h4>
         <table>
             <tbody>
@@ -67,6 +135,8 @@
                 </tr>
             </tbody>
         </table>
+        <hr>
+        {{end}}
         <h3>Glossary</h3>
         <table>
             <tbody>
@@ -114,4 +184,3 @@
         </table>
     </body>
 </html>
-

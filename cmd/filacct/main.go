@@ -2,12 +2,11 @@ package main
 
 import (
 	"embed"
+	"errors"
 	"fmt"
-	"html/template"
 	"log"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/lanzafame/filacct"
 	cli "github.com/urfave/cli/v2"
@@ -37,16 +36,112 @@ func main() {
 
 var downloadCmd = &cli.Command{
 	Name: "download",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:  "owner",
+			Usage: "Owner ID/Address",
+		},
+	},
 	Action: func(cctx *cli.Context) error {
-		if cctx.Args().Len() <= 0 {
-			log.Println("please provide at least one miner address, i.e. f0410941")
+		if cctx.Args().Len() <= 0 && cctx.String("owner") == "" {
+			return errors.New("please provide at least one miner ID, i.e. f0410941, or owner ID/address, i.e. --owner f0409359")
 		}
-		addresses := cctx.Args().Slice()
+		var addresses []string
+		var err error
+		if cctx.String("owner") != "" {
+			log.Println("fetching owner: ", cctx.String("owner"))
+			addresses, err = filacct.FetchOwner(cctx.String("owner"))
+			if err != nil {
+				return err
+			}
+		}
+
+		if len(addresses) == 0 {
+			addresses = cctx.Args().Slice()
+		}
+		err = initMinerDirs(addresses)
+		if err != nil {
+			log.Println(err)
+		}
 		for _, address := range addresses {
 			err := filacct.FetchAddress(address)
 			if err != nil {
 				return err
 			}
+		}
+		return nil
+	},
+}
+
+var initCmd = &cli.Command{
+	Name: "init",
+	Action: func(cctx *cli.Context) error {
+		/* directory structure for stored data
+		owners/
+			<owner-id>.json // contains the list of associated miner id's
+		<miner-id>/
+			messages/
+				<message-id>.json // contains the contents of message-id
+			msglist/
+				<timestamp>.json // contains the list of messages that are new since the last update
+			transfers/
+				<timestamp>.json // contains the list of transfers that are new since the last update
+			balance-stats.json // contains the balance statistics for the entire history of the miner
+			blocks.json // contains the list of blocks that the miner has won
+		*/
+		if cctx.Args().Len() <= 0 {
+			return errors.New("please provide at least one miner address, i.e. f0410941")
+		}
+		err := os.Mkdir("owners", 0777)
+		if err != nil {
+			log.Println("could not create directory owners")
+			log.Println(err)
+		}
+		addresses := cctx.Args().Slice()
+		return initMinerDirs(addresses)
+	},
+}
+
+// initMinerDirs creates the directories for a slice of miners
+func initMinerDirs(addresses []string) error {
+	for _, addr := range addresses {
+		err := os.Mkdir(addr, 0777)
+		if err != nil {
+			return err
+		}
+		err = os.MkdirAll(fmt.Sprintf("%s/messages", addr), 0777)
+		if err != nil {
+			return err
+		}
+		err = os.MkdirAll(fmt.Sprintf("%s/msglist", addr), 0777)
+		if err != nil {
+			return err
+		}
+		err = os.MkdirAll(fmt.Sprintf("%s/transfers", addr), 0777)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+var serveCmd = &cli.Command{
+	Name: "serve",
+	Flags: []cli.Flag{
+		&cli.IntFlag{
+			Name:  "port",
+			Value: 9090,
+			Usage: "Port that the server will use",
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+		http.HandleFunc("/", account)
+
+		port := cctx.Int("port")
+		log.Printf("serving on 0.0.0.0:%d...", port)
+		err := http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", port), nil) // setting listening port
+		if err != nil {
+			log.Fatal("ListenAndServe: ", err)
 		}
 		return nil
 	},
@@ -89,128 +184,6 @@ var processCmd = &cli.Command{
 
 			filacct.WriteResultsToCSV(resultingDays)
 		}
-		return nil
-	},
-}
-
-type Result struct {
-	MinerID     string
-	StartDate   string
-	EndDate     string
-	Available   string
-	Pledged     string
-	Locked      string
-	Transferred string
-	Penalty     string
-	MinerFee    string
-	BlocksWon   int
-	BurnFee     string
-	WindowPoSt  string
-	PreCommit   string
-	ProveCommit string
-	FILWon      string
-}
-
-func account(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "GET" {
-		t, err := template.ParseFS(content, "template/form.gtpl")
-		if err != nil {
-			log.Print(err)
-		}
-		t.Execute(w, nil)
-	} else {
-		r.ParseForm()
-		log.Printf("req: ip: %s, user-agent: %s", r.RemoteAddr, r.UserAgent())
-		log.Printf("miner-id: %s, start-date: %s, end-date: %s", r.Form["miner-id"], r.Form["start-date"], r.Form["end-date"])
-		const dateFmt = "2006-01-02"
-		start, err := time.Parse(dateFmt, r.Form["start-date"][0])
-		if err != nil {
-			log.Print(err)
-		}
-		end, err := time.Parse(dateFmt, r.Form["end-date"][0])
-		if err != nil {
-			log.Print(err)
-		}
-
-		q := filacct.Query{MinerID: r.Form["miner-id"][0], StartDate: start, EndDate: end}
-
-		results, err := filacct.QueryMiner(q)
-		if err != nil {
-			log.Print(err)
-		}
-
-		res := &Result{
-			MinerID:     q.MinerID,
-			StartDate:   q.StartDate.Local().String(),
-			EndDate:     q.EndDate.Local().String(),
-			Available:   results.Available,
-			Pledged:     results.Pledged,
-			Locked:      results.Locked,
-			Penalty:     results.Penalty.Value,
-			Transferred: results.Transferred,
-			MinerFee:    results.MinerFee,
-			BlocksWon:   results.Count,
-			BurnFee:     results.BurnFee,
-			WindowPoSt:  results.WindowPoSt,
-			PreCommit:   results.PreCommit,
-			ProveCommit: results.ProveCommit,
-			FILWon:      results.Reward,
-		}
-		t, err := template.ParseFS(content, "template/results.gtpl")
-		if err != nil {
-			log.Print(err)
-		}
-		t.Execute(w, res)
-	}
-}
-
-var serveCmd = &cli.Command{
-	Name: "serve",
-	Flags: []cli.Flag{
-		&cli.IntFlag{
-			Name:  "port",
-			Value: 9090,
-			Usage: "Port that the server will use",
-		},
-	},
-	Action: func(cctx *cli.Context) error {
-		http.HandleFunc("/", account)
-
-		port := cctx.Int("port")
-		err := http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", port), nil) // setting listening port
-		if err != nil {
-			log.Fatal("ListenAndServe: ", err)
-		}
-		return nil
-	},
-}
-
-var initCmd = &cli.Command{
-	Name: "init",
-	Action: func(cctx *cli.Context) error {
-		if cctx.Args().Len() <= 0 {
-			log.Println("please provide at least one miner address, i.e. f0410941")
-		}
-		addresses := cctx.Args().Slice()
-		for _, addr := range addresses {
-			err := os.Mkdir(addr, 0777)
-			if err != nil {
-				return err
-			}
-			err = os.MkdirAll(fmt.Sprintf("%s/messages", addr), 0777)
-			if err != nil {
-				return err
-			}
-			err = os.MkdirAll(fmt.Sprintf("%s/msglist", addr), 0777)
-			if err != nil {
-				return err
-			}
-			err = os.MkdirAll(fmt.Sprintf("%s/transfers", addr), 0777)
-			if err != nil {
-				return err
-			}
-		}
-
 		return nil
 	},
 }
