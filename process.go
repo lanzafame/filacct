@@ -193,7 +193,7 @@ func (m *Miner) GetPenalties(start, end int64) (Penalty, error) {
 
 	var amount float64
 	for _, s := range subset {
-		if s.Message == "" {
+		if s.Message == "" && s.Type == "burn" {
 			a, _ := strconv.ParseFloat(s.Value, 64)
 			amount += a
 		}
