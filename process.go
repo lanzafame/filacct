@@ -288,7 +288,7 @@ func (m *Miner) GetFees(start, end int64) (Fees, error) {
 		WindowPoSt   float64
 		PreCommit    float64
 		ProveCommit  float64
-		Other        float64
+		TotalBurn    float64
 		MinerFee     float64
 		MinerPenalty float64
 	}{}
@@ -306,9 +306,8 @@ func (m *Miner) GetFees(start, end int64) (Fees, error) {
 				fees.PreCommit += burn + oeb
 			case 7:
 				fees.ProveCommit += burn + oeb
-			default:
-				fees.Other += burn + oeb
 			}
+			fees.TotalBurn += burn + oeb
 			fees.MinerFee += mfee
 			fees.MinerPenalty += mpen
 		}
@@ -320,7 +319,7 @@ func (m *Miner) GetFees(start, end int64) (Fees, error) {
 		ProveCommit:  FilFloat(fees.ProveCommit),
 		MinerFee:     FilFloat(fees.MinerFee),
 		MinerPenalty: FilFloat(fees.MinerPenalty),
-		BurnFee:      FilFloat(fees.Other),
+		BurnFee:      FilFloat(fees.TotalBurn),
 	}
 
 	return fee, nil
