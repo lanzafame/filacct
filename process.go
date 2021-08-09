@@ -90,6 +90,7 @@ type Result struct {
 	Fees    `json:"fees,omitempty"`
 	Penalty `json:"penalty,omitempty"`
 	Sent    `json:"sent,omitempty"`
+	Burn    `json:"burn,omitempty"`
 }
 
 type Query struct {
@@ -192,6 +193,28 @@ func (m *Miner) GetPenalties(start, end int64) (Penalty, error) {
 
 	faults := math.Abs(amount)
 	return Penalty{Value: FilFloat(faults)}, nil
+}
+
+type Burn struct {
+	Value string
+}
+
+func (m *Miner) GetBurn(start, end int64) (Burn, error) {
+	subset, err := m.GetTransfers(start, end)
+	if err != nil {
+		return Burn{}, err
+	}
+
+	var amount float64
+	for _, s := range subset {
+		if s.Message != "" && s.Type == "burn" {
+			a, _ := strconv.ParseFloat(s.Value, 64)
+			amount += a
+		}
+	}
+
+	faults := math.Abs(amount)
+	return Burn{Value: FilFloat(faults)}, nil
 }
 
 func (m *Miner) GetAssets(start, end int64) (Assets, error) {
