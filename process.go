@@ -125,6 +125,11 @@ func QueryMiner(q Query) (*Result, error) {
 		return nil, err
 	}
 
+	burn, err := m.GetBurn(start, end)
+	if err != nil {
+		return nil, err
+	}
+
 	blocks, err := m.GetBlocks(start, end)
 	if err != nil {
 		return nil, err
@@ -142,6 +147,7 @@ func QueryMiner(q Query) (*Result, error) {
 		Fees:    fees,
 		Penalty: penalties,
 		Sent:    sent,
+		Burn:    burn,
 	}
 
 	return res, nil
