@@ -21,6 +21,7 @@ type Result struct {
 	Locked      string
 	Transferred string
 	Penalty     string
+	Sent        string
 	MinerFee    string
 	BlocksWon   int
 	BurnFee     string
@@ -73,6 +74,7 @@ func account(w http.ResponseWriter, r *http.Request) {
 					Pledged:     result.Pledged,
 					Locked:      result.Locked,
 					Penalty:     result.Penalty.Value,
+					Sent:        result.Sent.Value,
 					Transferred: result.Transferred,
 					MinerFee:    result.MinerFee,
 					BlocksWon:   result.Count,
@@ -100,6 +102,7 @@ func account(w http.ResponseWriter, r *http.Request) {
 					Pledged:     result.Pledged,
 					Locked:      result.Locked,
 					Penalty:     result.Penalty.Value,
+					Sent:        result.Sent.Value,
 					Transferred: result.Transferred,
 					MinerFee:    result.MinerFee,
 					BlocksWon:   result.Count,

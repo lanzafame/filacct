@@ -1,5 +1,9 @@
+<!doctype html>
 <html>
     <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link href="/tailwind.css" rel="stylesheet">
     <title>{{.Owner.MinerID}} Account Summary</title>
     </head>
     <body>
@@ -131,6 +135,11 @@
                 <tr>
                     <td></td>
                     <td>Penalty: {{.Penalty}}</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td>Sent out: {{.Sent}}</td>
                     <td></td>
                 </tr>
             </tbody>

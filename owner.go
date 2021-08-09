@@ -143,8 +143,16 @@ func SummariseResults(results map[string]*Result) *Result {
 		res.Blocks.Add(r.Blocks)
 		res.Fees.Add(r.Fees)
 		res.Penalty.Add(r.Penalty)
+		res.Sent.Add(r.Sent)
 	}
 	return &res
+}
+
+func (a *Sent) Add(b Sent) {
+	value, _ := strconv.ParseFloat(a.Value, 64)
+	adder, _ := strconv.ParseFloat(b.Value, 64)
+	value += adder
+	a.Value = strconv.FormatFloat(value, 'f', -1, 64)
 }
 
 func (a *Penalty) Add(b Penalty) {

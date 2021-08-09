@@ -79,12 +79,17 @@ type Penalty struct {
 	Value string
 }
 
+type Sent struct {
+	Value string
+}
+
 type Result struct {
 	Balance `json:"balance,omitempty"`
 	Assets  `json:"assets,omitempty"`
 	Blocks  `json:"blocks,omitempty"`
 	Fees    `json:"fees,omitempty"`
 	Penalty `json:"penalty,omitempty"`
+	Sent    `json:"sent,omitempty"`
 }
 
 type Query struct {
@@ -114,6 +119,11 @@ func QueryMiner(q Query) (*Result, error) {
 		return nil, err
 	}
 
+	sent, err := m.GetSent(start, end)
+	if err != nil {
+		return nil, err
+	}
+
 	blocks, err := m.GetBlocks(start, end)
 	if err != nil {
 		return nil, err
@@ -130,6 +140,7 @@ func QueryMiner(q Query) (*Result, error) {
 		Blocks:  blocks,
 		Fees:    fees,
 		Penalty: penalties,
+		Sent:    sent,
 	}
 
 	return res, nil
@@ -166,29 +177,9 @@ func (m *Miner) GetBalance() (Balance, error) {
 }
 
 func (m *Miner) GetPenalties(start, end int64) (Penalty, error) {
-	// transfers to the burn account that have no message id are penalties
-	// get transfer amounts to determine whether any FIL has been sent from the miner
-	filename, err := m.getLatestJsonFile("transfers")
+	subset, err := m.GetTransfers(start, end)
 	if err != nil {
 		return Penalty{}, err
-	}
-	acontent, err := ioutil.ReadFile(fmt.Sprintf("%s/transfers/%s.json", m.Address, filename))
-	if err != nil {
-		return Penalty{}, err
-	}
-
-	transf := []transfer{}
-	err = json.Unmarshal(acontent, &transf)
-	if err != nil {
-		return Penalty{}, err
-	}
-	sort.SliceStable(transf, func(i, j int) bool { return transf[i].Height < transf[j].Height })
-
-	subset := []transfer{}
-	for _, t := range transf {
-		if t.Timestamp >= start && t.Timestamp <= end {
-			subset = append(subset, t)
-		}
 	}
 
 	var amount float64
@@ -204,37 +195,38 @@ func (m *Miner) GetPenalties(start, end int64) (Penalty, error) {
 }
 
 func (m *Miner) GetAssets(start, end int64) (Assets, error) {
-	filename, err := m.getLatestJsonFile("transfers")
-	if err != nil {
-		return Assets{}, err
-	}
-	content, err := ioutil.ReadFile(fmt.Sprintf("%s/transfers/%s.json", m.Address, filename))
+	subset, err := m.GetTransfers(start, end)
 	if err != nil {
 		return Assets{}, err
 	}
 
-	transf := []transfer{}
-	err = json.Unmarshal(content, &transf)
-	if err != nil {
-		return Assets{}, err
-	}
-	sort.SliceStable(transf, func(i, j int) bool { return transf[i].Height < transf[j].Height })
-
-	subset := []transfer{}
-	for _, t := range transf {
-		if t.Timestamp >= start && t.Timestamp <= end {
-			subset = append(subset, t)
-		}
-	}
 	var amount float64
 	for _, s := range subset {
-		a, _ := strconv.ParseFloat(s.Value, 64)
-		amount += a
+		if s.Type == "receive" {
+			a, _ := strconv.ParseFloat(s.Value, 64)
+			amount += a
+		}
 	}
 
 	asset := Assets{Transferred: FilFloat(amount)}
 
 	return asset, nil
+}
+
+func (m *Miner) GetSent(start, end int64) (Sent, error) {
+	subset, err := m.GetTransfers(start, end)
+	if err != nil {
+		return Sent{}, err
+	}
+
+	var amount float64
+	for _, s := range subset {
+		if s.Type == "send" {
+			a, _ := strconv.ParseFloat(s.Value, 64)
+			amount += a
+		}
+	}
+	return Sent{Value: FilFloat(amount)}, nil
 }
 
 func (m *Miner) GetBlocks(start, end int64) (Blocks, error) {
@@ -323,6 +315,29 @@ func (m *Miner) GetFees(start, end int64) (Fees, error) {
 	}
 
 	return fee, nil
+}
+
+func (m *Miner) GetTransfers(start, end int64) ([]transfer, error) {
+	content, err := ioutil.ReadFile(fmt.Sprintf("%s/transfers.json", m.Address))
+	if err != nil {
+		return nil, err
+	}
+
+	transf := []transfer{}
+	err = json.Unmarshal(content, &transf)
+	if err != nil {
+		return nil, err
+	}
+	sort.SliceStable(transf, func(i, j int) bool { return transf[i].Height < transf[j].Height })
+
+	subset := []transfer{}
+	for _, t := range transf {
+		if t.Timestamp >= start && t.Timestamp <= end {
+			subset = append(subset, t)
+		}
+	}
+
+	return subset, nil
 }
 
 func FilFloat(v float64) string {
