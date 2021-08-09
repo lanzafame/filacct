@@ -318,13 +318,17 @@ func (m *Miner) GetFees(start, end int64) (Fees, error) {
 }
 
 func (m *Miner) GetTransfers(start, end int64) ([]transfer, error) {
-	content, err := ioutil.ReadFile(fmt.Sprintf("%s/transfers.json", m.Address))
+	filename, err := m.getLatestJsonFile("transfers")
+	if err != nil {
+		return nil, err
+	}
+	acontent, err := ioutil.ReadFile(fmt.Sprintf("%s/transfers/%s.json", m.Address, filename))
 	if err != nil {
 		return nil, err
 	}
 
 	transf := []transfer{}
-	err = json.Unmarshal(content, &transf)
+	err = json.Unmarshal(acontent, &transf)
 	if err != nil {
 		return nil, err
 	}
