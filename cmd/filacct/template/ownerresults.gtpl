@@ -46,7 +46,7 @@
                     <td>Blocks won: {{.Owner.BlocksWon}}</td>
                 </tr>
                 <tr>
-                    <td>Burn: {{.Burn}}</td>
+                    <td></td>
                     <td>Burn Fee: {{.Owner.BurnFee}}</td>
                     <td>FIL won: {{.Owner.FILWon}}</td>
                 </tr>

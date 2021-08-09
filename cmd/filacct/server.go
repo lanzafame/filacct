@@ -24,7 +24,6 @@ type Result struct {
 	Sent        string
 	MinerFee    string
 	BlocksWon   int
-	Burn        string
 	BurnFee     string
 	WindowPoSt  string
 	PreCommit   string
@@ -79,7 +78,6 @@ func account(w http.ResponseWriter, r *http.Request) {
 					Transferred: result.Transferred,
 					MinerFee:    result.MinerFee,
 					BlocksWon:   result.Count,
-					Burn:        result.Burn.Value,
 					BurnFee:     result.BurnFee,
 					WindowPoSt:  result.WindowPoSt,
 					PreCommit:   result.PreCommit,
@@ -108,7 +106,6 @@ func account(w http.ResponseWriter, r *http.Request) {
 					Transferred: result.Transferred,
 					MinerFee:    result.MinerFee,
 					BlocksWon:   result.Count,
-					Burn:        result.Burn.Value,
 					BurnFee:     result.BurnFee,
 					WindowPoSt:  result.WindowPoSt,
 					PreCommit:   result.PreCommit,
