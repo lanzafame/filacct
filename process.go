@@ -162,15 +162,15 @@ func (m *Miner) GetBalance() (Balance, error) {
 
 	available, err := strconv.ParseFloat(b[0].Available, 64)
 	if err != nil {
-		return Balance{}, err
+		return Balance{}, fmt.Errorf("parse available: %w", err)
 	}
 	pledged, err := strconv.ParseFloat(b[0].Pledged, 64)
 	if err != nil {
-		return Balance{}, err
+		return Balance{}, fmt.Errorf("parse pledged: %w", err)
 	}
 	locked, err := strconv.ParseFloat(b[0].Vesting, 64)
 	if err != nil {
-		return Balance{}, err
+		return Balance{}, fmt.Errorf("parse locked: %w", err)
 	}
 	// get latest balance element
 	return Balance{Available: FilFloat(available), Pledged: FilFloat(pledged), Locked: FilFloat(locked)}, nil
