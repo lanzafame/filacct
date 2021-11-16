@@ -1,5 +1,13 @@
 # filacct
 
+## Build
+
+Requires go1.6 or greater.
+
+```
+$ go build cmd/...
+```
+
 Track mining accounts
 
 ## Track a single Miner Actor
