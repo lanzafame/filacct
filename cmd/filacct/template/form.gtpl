@@ -10,8 +10,8 @@
         <div class="text-xl font-medium text-black">
             <form action="/" method="post">
                 Miner ID:<input type="text" name="miner-id">
-                Start Date:<input type="date" name="start-date" value={{.Start}}>
-                End Date:<input type="date" name="end-date" value={{.End}}>
+                Start Date:<input type="date" name="start-date">
+                End Date:<input type="date" name="end-date">
                 <input type="submit" value="Go">
             </form>
         </div>
