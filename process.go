@@ -156,7 +156,7 @@ func (m *Miner) GetBalance() (Balance, error) {
 	b := []balance{}
 	err = json.Unmarshal(content, &b)
 	if err != nil {
-		return Balance{}, err
+		return Balance{}, fmt.Errorf("miner: %s: %w", m.Address, err)
 	}
 	sort.SliceStable(b, func(i, j int) bool { return b[i].Height > b[j].Height })
 
