@@ -74,11 +74,10 @@ func (rc *ResultCache) account(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Print(err)
 		}
-		today := time.Now()
-		end := strings.Join([]string{string(today.Year()), string(today.Month()), string(today.Day())}, "-")
+		today := time.Now().Format(dateFmt)
 		data := &Default{
 			Start: "2021-10-01",
-			End:   end,
+			End:   today,
 		}
 		t.Execute(w, data)
 	} else {
