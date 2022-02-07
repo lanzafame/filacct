@@ -152,7 +152,8 @@ var serveCmd = &cli.Command{
 		},
 	},
 	Action: func(cctx *cli.Context) error {
-		http.HandleFunc("/", account)
+		rc := NewResultCache()
+		http.HandleFunc("/", rc.account)
 
 		port := cctx.Int("port")
 		log.Printf("serving on 0.0.0.0:%d...", port)

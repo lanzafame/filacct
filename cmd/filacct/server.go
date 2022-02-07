@@ -5,6 +5,8 @@ import (
 	"log"
 	"net/http"
 	"sort"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/lanzafame/filacct"
@@ -36,13 +38,49 @@ type OwnerResult struct {
 	Miners []Result
 }
 
-func account(w http.ResponseWriter, r *http.Request) {
+type ResultCache struct {
+	sync.RWMutex
+	data map[string]map[string]*filacct.Result
+}
+
+func NewResultCache() *ResultCache {
+	data := make(map[string]map[string]*filacct.Result)
+	return &ResultCache{data: data}
+}
+
+func (rc *ResultCache) Get(address, start, end string) (map[string]*filacct.Result, bool) {
+	rc.RLock()
+	defer rc.RUnlock()
+	key := strings.Join([]string{address, start, end}, ":")
+	res, ok := rc.data[key]
+	return res, ok
+}
+
+func (rc *ResultCache) Put(address, start, end string, res map[string]*filacct.Result) {
+	rc.Lock()
+	defer rc.Unlock()
+	key := strings.Join([]string{address, start, end}, ":")
+	rc.data[key] = res
+}
+
+type Default struct {
+	Start string
+	End   string
+}
+
+func (rc *ResultCache) account(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		t, err := template.ParseFS(content, "template/form.gtpl")
 		if err != nil {
 			log.Print(err)
 		}
-		t.Execute(w, nil)
+		today := time.Now()
+		end := strings.Join([]string{string(today.Year()), string(today.Month()), string(today.Day())}, "-")
+		data := &Default{
+			Start: "2021-10-01",
+			End:   end,
+		}
+		t.Execute(w, data)
 	} else {
 		r.ParseForm()
 		log.Printf("req: ip: %s, user-agent: %s", r.RemoteAddr, r.UserAgent())
@@ -55,12 +93,19 @@ func account(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Print(err)
 		}
+		address := r.Form["miner-id"][0]
 
-		q := filacct.Query{Address: r.Form["miner-id"][0], StartDate: start, EndDate: end}
+		q := filacct.Query{Address: address, StartDate: start, EndDate: end}
 
-		qresults, err := filacct.QueryAddress(q)
-		if err != nil {
-			log.Print(err)
+		qresults := map[string]*filacct.Result{}
+		if res, ok := rc.Get(address, string(start.Unix()), string(end.Unix())); ok {
+			qresults = res
+		} else {
+			qresults, err = filacct.QueryAddress(q)
+			if err != nil {
+				log.Print(err)
+			}
+			rc.Put(address, string(start.Unix()), string(end.Unix()), qresults)
 		}
 
 		if len(qresults) == 1 {
