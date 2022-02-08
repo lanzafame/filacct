@@ -159,15 +159,15 @@ func (m *Miner) fetchTransfers() error {
 		return err
 	}
 
-	// prevMsgStub, err := m.getLatestStoredMsg()
-	// if err != nil {
-	// 	return err
-	// }
+	prevTransfer, err := m.getLatestTransfer()
+	if err != nil {
+		return err
+	}
 
-	// if initMsgList.Messages[0].Height <= prevMsgStub.Height {
-	// 	log.Print("no new msgs found")
-	// 	return nil
-	// }
+	if initTransferList.Transfers[0].Height <= prevTransfer.Height {
+		log.Print("no new transfers found")
+		return nil
+	}
 
 	pageCalls := initTransferList.TotalCount / 100
 	ts := []transfer{}
@@ -177,11 +177,30 @@ func (m *Miner) fetchTransfers() error {
 			return err
 		}
 		ts = append(ts, transferList.Transfers...)
-		// if ts[len(ts)-1].Height <= prevMsgStub.Height {
-		// 	break
-		// }
+		if ts[len(ts)-1].Height <= prevTransfer.Height {
+			break
+		}
 	}
 
+	// read all of previously latest transfers
+	oldTransfers, err := m.getLatestContents("transfers")
+	if err != nil {
+		return err
+	}
+
+	trnfs := []transfer{}
+	err = json.Unmarshal(oldTransfers, &trnfs)
+	if err != nil {
+		return err
+	}
+
+	// append old to new transfers
+	ts = append(ts, trnfs...)
+	sort.SliceStable(ts, func(i, j int) bool {
+		return ts[i].Height > ts[j].Height
+	})
+
+	// write to new file with new timestamp filename
 	jsonTransfers, err := json.Marshal(ts)
 	if err != nil {
 		return err
@@ -191,6 +210,8 @@ func (m *Miner) fetchTransfers() error {
 	if err != nil {
 		return err
 	}
+
+	//TODO: remove old file
 
 	return nil
 }
@@ -206,6 +227,7 @@ func (m *Miner) fetchTransfersPage(url string) (transfers, error) {
 	if err != nil {
 		return transfers{}, err
 	}
+
 	return tList, nil
 }
 
@@ -390,6 +412,29 @@ func (m *Miner) getLatestContents(dir string) ([]byte, error) {
 		return nil, err
 	}
 	return content, nil
+}
+
+func (m *Miner) getLatestTransfer() (transfer, error) {
+	trans, err := m.getLatestContents("transfers")
+	if err != nil {
+		return transfer{}, err
+	}
+
+	if trans == nil {
+		return transfer{}, nil
+	}
+
+	trnfs := []transfer{}
+	err = json.Unmarshal(trans, &trnfs)
+	if err != nil {
+		return transfer{}, err
+	}
+
+	sort.SliceStable(trnfs, func(i, j int) bool {
+		return trnfs[i].Height > trnfs[j].Height
+	})
+
+	return trnfs[0], nil
 }
 
 func (m *Miner) getLatestStoredMsg() (msgStub, error) {
